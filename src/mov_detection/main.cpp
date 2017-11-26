@@ -6,8 +6,8 @@
 
 
 int main(int argc, char* argv[]){
-	const char* filename1 = "test_images/test1_1.jpg";
-	const char* filename2 = "test_images/test1_2.jpg";
+	const char* filename1 = "test_images/test2_1.jpg";
+	const char* filename2 = "test_images/test2_2.jpg";
 
 	cv::Mat I1 = cv::imread(filename1, cv::IMREAD_GRAYSCALE);
 	int sizeA=2500;
@@ -30,5 +30,21 @@ int main(int argc, char* argv[]){
 	cv::Point2d point=phaseCorr(p1(rC), p2(rC));
 	std::cout<<point<<std::endl;
 	std::cout<<"Angle: "<<360*point.y/sizeB<<std::endl;
+
+
+	cv::Mat rotated= rotate(I1, -360.0f*point.y/sizeB);
+
+	std::cout<<rotated.type()<<" "<<CV_32FC1<<std::endl;
+
+	cv::Mat n1=rotated(rA),n2=I2(rA);
+
+	cv::imshow("Rotated Image"       ,n1);
+	cv::imshow("Input Image"       ,n2);
+	n1.convertTo(n1,CV_32FC1);
+	n2.convertTo(n2,CV_32FC1);
+	std::cout<<n1.type()<<" "<<CV_32FC1<<std::endl;
+	cv::Point2d offset = phaseCorr(n1,n2);
+
+	std::cout<<offset<<" pixels"<<std::endl;
 	cv::waitKey();
 }

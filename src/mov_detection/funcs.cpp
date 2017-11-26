@@ -5,7 +5,7 @@
 
 cv::Mat fourierTrans(cv::Mat I){
 
-	cv::Mat padded;                            //expand input image to optimal size
+	cv::Mat padded;
 	int m = cv::getOptimalDFTSize( I.rows );
 	int n = cv::getOptimalDFTSize( I.cols );
 	cv::copyMakeBorder(I, padded, 0, m - I.rows, 0, n - I.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
@@ -77,6 +77,21 @@ cv::Mat polarTrans(const cv::Mat& I){
 
 cv::Point2d phaseCorr(const cv::Mat& m1, const cv::Mat& m2){
 	return cv::phaseCorrelate(m1,m2);
+
+
+}
+
+
+
+cv::Mat rotate(const cv::Mat& m1, double angle){
+	cv::Point center= cv::Point(m1.cols/2,m1.rows/2);
+
+	cv::Mat rotmat=cv::getRotationMatrix2D(center,angle,1.0);
+
+	cv::Mat r;
+	cv::warpAffine(m1,r,rotmat,{m1.cols,m1.rows});
+
+	return r;
 
 
 }
