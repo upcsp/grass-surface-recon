@@ -2,48 +2,45 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
-#include "funcs.hpp"
-
+#include "disp.hpp"
 
 int main(int argc, char* argv[]){
-	const char* filename1 = "test_images/test2_1.jpg";
-	const char* filename2 = "test_images/test2_2.jpg";
 
-	cv::Mat I1 = cv::imread(filename1, cv::IMREAD_GRAYSCALE);
-	int sizeA=2500;
-	cv::Rect rA={I1.cols/2-sizeA/2,I1.rows/2-sizeA/2,sizeA,sizeA};
-	cv::Mat mg1= I1(rA);
-	cv::Mat f1=fourierTrans(mg1);
-	int sizeB=sizeA/4;
-	cv::Rect rB={f1.cols/2-sizeB/2,f1.rows/2-sizeB/2,sizeB,sizeB};
-	cv::Mat p1=polarTrans(f1(rB));
-	int sizeC=sizeB/2;
-	cv::Rect rC={0,0,sizeB,sizeC};
+	const char* filename1 = "test_images/test1_1.jpg";
+	const char* filename2 = "test_images/test1_2.jpg";
+
+	cv::Mat prev = cv::imread(filename1, cv::IMREAD_GRAYSCALE);
+	cv::Mat curr = cv::imread(filename2, cv::IMREAD_GRAYSCALE);
+	//cv::resize(prev,prev,{200,200});
+	//cv::resize(curr,curr,{200,200});
+	int sizeA=std::min(prev.cols,prev.rows)*0.8;
+	sizeA=sizeA-sizeA%4;
+	int sizeB=sizeA/2;
+	int sizeC=sizeB/1;
+
+	std::cout<<"sizeA "<<sizeA<<" sizeB "<<sizeB<<" sizeC "<<sizeC<<std::endl;
+	cv::Rect rA={prev.cols/2-sizeA/2,prev.rows/2-sizeA/2,sizeA,sizeA};
+
+	resizePrint("prev",prev(rA));
+	resizePrint("curr",curr(rA));
+	cv::Point2d point=getAngle(prev(rA), curr(rA),sizeB,sizeC);
+	std::cout<<point<<std::endl;
+	float angle=360.0f*point.y/sizeA;
+	std::cout<<"Angle: "<<angle<<" deg"<<std::endl;
 
 	cv::waitKey();
 
-	cv::Mat I2 = cv::imread(filename2, cv::IMREAD_GRAYSCALE);
-	cv::Mat mg2= I2(rA);
-	cv::Mat f2=fourierTrans(mg2);
-	cv::Mat p2=polarTrans(f2(rB));
-	
-	cv::Point2d point=phaseCorr(p1(rC), p2(rC));
-	std::cout<<point<<std::endl;
-	std::cout<<"Angle: "<<360*point.y/sizeB<<std::endl;
+	cv::Mat rotated= rotate(curr, angle);
 
 
-	cv::Mat rotated= rotate(I1, -360.0f*point.y/sizeB);
+	cv::Mat n1=rotated(rA),
+			n2=prev(rA);
 
-	std::cout<<rotated.type()<<" "<<CV_32FC1<<std::endl;
-
-	cv::Mat n1=rotated(rA),n2=I2(rA);
-
-	cv::imshow("Rotated Image"       ,n1);
-	cv::imshow("Input Image"       ,n2);
+	resizePrint("prev 2"   ,n2);
+	resizePrint("curr rot" ,n1);
 	n1.convertTo(n1,CV_32FC1);
 	n2.convertTo(n2,CV_32FC1);
-	std::cout<<n1.type()<<" "<<CV_32FC1<<std::endl;
-	cv::Point2d offset = phaseCorr(n1,n2);
+	cv::Point2d offset = cv::phaseCorrelate(n1,n2);
 
 	std::cout<<offset<<" pixels"<<std::endl;
 	cv::waitKey();

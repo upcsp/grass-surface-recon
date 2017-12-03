@@ -1,9 +1,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "funcs.hpp"
+#include <iostream>
+#include "disp.hpp"
 
-cv::Mat fourierTrans(cv::Mat I){
+cv::Mat fourierTrans(const cv::Mat& I){
 
 	cv::Mat padded;
 	int m = cv::getOptimalDFTSize( I.rows );
@@ -27,6 +28,7 @@ cv::Mat fourierTrans(cv::Mat I){
 	int cx = magI.cols/2;
 	int cy = magI.rows/2;
 
+	resizePrint("prefourier",magI);
 	cv::Mat q0(magI, cv::Rect(0, 0, cx, cy));
 	cv::Mat q1(magI, cv::Rect(cx, 0, cx, cy));
 	cv::Mat q2(magI, cv::Rect(0, cy, cx, cy));
@@ -41,22 +43,8 @@ cv::Mat fourierTrans(cv::Mat I){
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	cv::Mat printMat;
-	cv::normalize(magI, printMat, 0, 1, CV_MINMAX);
-
-
-	//cv::resize(I,I,{511,511});
-	cv::Mat inpI;
-	cv::resize(I,inpI,{500,500});
-	cv::imshow("Input Image"       , inpI);
-	int d=128;
-	//cv::Mat mgg= printMat({cx-d,cy-d,2*d,2*d});
-	cv::resize(printMat,printMat,{500,500});
-	cv::imshow("spectrum magnitude", printMat);
 
 	return magI;
-
-
 }
 
 cv::Mat polarTrans(const cv::Mat& I){
@@ -68,22 +56,18 @@ cv::Mat polarTrans(const cv::Mat& I){
 	cv::Point center(0.5*x,0.5*y);
 	float radius=x<y?0.5*x:0.5*y;
 	cv::linearPolar(I,ret,center,radius,cv::INTER_CUBIC);
-	cv::Mat printMat;
-	cv::normalize(ret, printMat, 0, 1, CV_MINMAX);
-	cv::resize(printMat,printMat,{500,500});
-	cv::imshow("polar", printMat);
 	return ret;
 }
 
-cv::Point2d phaseCorr(const cv::Mat& m1, const cv::Mat& m2){
-	return cv::phaseCorrelate(m1,m2);
-
-
+void resizePrint(std::string title,const cv::Mat& m){
+	cv::Mat printMat;
+	cv::normalize(m, printMat, 255, 0, CV_MINMAX,CV_8UC1);
+	cv::resize(printMat,printMat,{1000,1000});
+	//cv::resize(m,printMat,{500,500});
+	cv::imshow(title, printMat);
 }
 
-
-
-cv::Mat rotate(const cv::Mat& m1, double angle){
+cv::Mat rotate(const cv::Mat& m1, double angle){//Around centerpoint
 	cv::Point center= cv::Point(m1.cols/2,m1.rows/2);
 
 	cv::Mat rotmat=cv::getRotationMatrix2D(center,angle,1.0);
@@ -92,6 +76,25 @@ cv::Mat rotate(const cv::Mat& m1, double angle){
 	cv::warpAffine(m1,r,rotmat,{m1.cols,m1.rows});
 
 	return r;
+}
 
+cv::Point2d getAngle(const cv::Mat& m1, const cv::Mat& m2, int fd,int pd){
+	cv::Mat fp = fourierTrans(m1);
+	cv::Mat fc = fourierTrans(m2);
+
+	cv::Rect rf={fp.cols/2-fd/2,fp.rows/2-fd/2,fd,fd};
+	resizePrint("fp(rec)",fp(rf));
+	resizePrint("fp",fp);
+	//resizePrint("fc(rec)",fc(rf));
+	cv::Mat pp = polarTrans(fp(rf));
+	cv::Mat pc = polarTrans(fc(rf));
+
+	cv::Rect rp={0,0,pd,pp.rows};
+	resizePrint("pp(rec)",pp(rp));
+	resizePrint("pc(rec)",pc(rp));
+	pp.convertTo(pp,CV_32FC1);
+	pc.convertTo(pc,CV_32FC1);
+	return cv::phaseCorrelate(pp(rp),pc(rp));
 
 }
+

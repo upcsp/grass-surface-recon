@@ -14,9 +14,9 @@ EXEC=mov
 $(EXEC) : $(OBJDIR)/main.o $(OBJDIR)/funcs.o
 	$(CC) $(LFLAGS) $(LIBS) $(OBJDIR)/*.o -o $(EXEC)
 
-$(OBJDIR)/main.o : main.cpp funcs.hpp
+$(OBJDIR)/main.o : main.cpp disp.hpp
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJDIR)/funcs.o : funcs.cpp funcs.hpp
+$(OBJDIR)/funcs.o : disp.cpp disp.hpp
 	$(CC) $(CFLAGS) $< -o $@
 
